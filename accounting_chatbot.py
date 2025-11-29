@@ -7,7 +7,7 @@ from langchain_groq import ChatGroq
 llm = ChatGroq(
     model="llama-3.1-70b-versatile",
     temperature=0.3,
-    groq_api_key=st.secrets["GROQ_API_KEY"]  # ← ще работи автоматично в Streamlit Cloud
+    groq_api_key=st.secrets["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"]  # ← ще работи автоматично в Streamlit Cloud
 )
 
 template = """
