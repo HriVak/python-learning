@@ -1,19 +1,30 @@
-from flask import Flask, request, jsonify
-from openai import OpenAI
+import streamlit as st
 
-client = OpenAI(api_key="YOUR_API_KEY")
-app = Flask(__name__)
+st.set_page_config(page_title="Чатбот", page_icon="🤖")
 
-@app.route("/chat", methods=["POST"])
-def chat():
-    msg = request.json["message"]
+st.title("🤖 Моят Streamlit чатбот")
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": msg}]
-    )
+# Пазим историята на съобщенията
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    reply = response.choices[0].message.content
-    return jsonify({"reply": reply})
+# Показване на старите съобщения
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
 
-app.run()
+# Поле за потребителско съобщение
+user_message = st.chat_input("Напиши съобщение...")
+
+if user_message:
+    # Добавяме съобщението в историята
+    st.session_state.messages.append({"role": "user", "content": user_message})
+    with st.chat_message("user"):
+        st.write(user_message)
+
+    # Отговор от чатбота (тук е твоята логика)
+    bot_reply = f"Ти каза: {user_message}"
+
+    st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+    with st.chat_message("assistant"):
+        st.write(bot_reply)
