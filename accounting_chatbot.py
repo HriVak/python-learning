@@ -1,29 +1,11 @@
-accounting_chatbot.py — Джи Енд Ви Акаунтинг помощник
 import streamlit as st
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq
-
-# Взима ключа от secrets (скрит и безопасен)
-llm = ChatGroq(
-    model="llama-3.1-70b-versatile",
-    temperature=0.3,
-    groq_api_key=st.secrets["GROQ_API_KEY"]
-)
-
-template = """
-Ти си Джи Енд Ви Акаунтинг — професионален счетоводител и ТРЗ специалист в България.
-Отговаряй само на български, кратко, точно и любезно.
-Използвай данни за 2025–2026 г.
-
-Въпрос: {question}
-
-Отговор:
-"""
-
-prompt = ChatPromptTemplate.from_template(template)
-chain = prompt | llm
+from groq import Groq
+import os
 
 st.set_page_config(page_title="Джи Енд Ви Акаунтинг – помощник", page_icon="")
+
+# Взима ключа от secrets
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 st.markdown("""
 <div style="text-align:center;padding:30px;background:linear-gradient(90deg,#1E3A8A,#1E88E5);color:white;border-radius:15px;">
@@ -44,6 +26,12 @@ if question := st.chat_input("Напишете въпроса си тук..."):
 
     with st.chat_message("assistant"):
         with st.spinner("Мисля..."):
-            response = chain.invoke({"question": question})
-        st.write(response.content)
-    st.session_state.messages.append({"role": "assistant", "content": response.content})
+            chat_complete = client.chat.completions.create(
+                model="llama-3.1-70b-versatile",
+                messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
+                temperature=0.3,
+                max_tokens=200
+            )
+            response = chat_complete.choices[0].message.content
+        st.write(response)
+    st.session_state.messages.append({"role": "assistant", "content": response})
