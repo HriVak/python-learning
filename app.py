@@ -1,30 +1,90 @@
 import streamlit as st
+from datetime import datetime
+from openai import OpenAI
 
-st.set_page_config(page_title="Чатбот", page_icon="🤖")
+# --------------------------
+# ПОСТАВИ ТВОЯ API KEY ТУК:
+# client = OpenAI(api_key="YOUR_KEY_HERE")
+# --------------------------
 
-st.title("🤖 Моят Streamlit чатбот")
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# Пазим историята на съобщенията
+st.set_page_config(page_title="AI Chatbot", page_icon="🤖", layout="centered")
+
+# --- Custom CSS (балончета) ---
+st.markdown("""
+<style>
+.user-bubble {
+    background-color: #DCF8C6;
+    padding: 10px 15px;
+    border-radius: 15px;
+    margin: 8px 0;
+    width: fit-content;
+    float: right;
+    max-width: 80%;
+    clear: both;
+}
+
+.bot-bubble {
+    background-color: #F1F0F0;
+    padding: 10px 15px;
+    border-radius: 15px;
+    margin: 8px 0;
+    width: fit-content;
+    float: left;
+    max-width: 80%;
+    clear: both;
+}
+
+.timestamp {
+    font-size: 10px;
+    color: #888;
+    clear: both;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🤖 Реален AI Чатбот (GPT-4o-mini)")
+
+# История на чатове
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Показване на старите съобщения
+# Показване на старите
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
+    bubble = "user-bubble" if msg["role"] == "user" else "bot-bubble"
+    st.markdown(
+        f"<div class='{bubble}'>{msg['content']}</div>"
+        f"<div class='timestamp'>{msg['time']}</div>",
+        unsafe_allow_html=True,
+    )
 
-# Поле за потребителско съобщение
-user_message = st.chat_input("Напиши съобщение...")
+# Въвеждане
+user_text = st.chat_input("Напиши нещо...")
 
-if user_message:
-    # Добавяме съобщението в историята
-    st.session_state.messages.append({"role": "user", "content": user_message})
-    with st.chat_message("user"):
-        st.write(user_message)
+if user_text:
+    now = datetime.now().strftime("%H:%M")
 
-    # Отговор от чатбота (тук е твоята логика)
-    bot_reply = f"Ти каза: {user_message}"
+    # Добавяме потребителя
+    st.session_state.messages.append({
+        "role": "user",
+        "content": user_text,
+        "time": now
+    })
 
-    st.session_state.messages.append({"role": "assistant", "content": bot_reply})
-    with st.chat_message("assistant"):
-        st.write(bot_reply)
+    # ----- AI ОТГОВОР -----
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",       # реален GPT модел
+        messages=[{"role": "user", "content": user_text}]
+    )
+
+    bot_reply = response.choices[0].message.content
+    # ----------------------
+
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": bot_reply,
+        "time": now
+    })
+
+    st.experimental_rerun()
